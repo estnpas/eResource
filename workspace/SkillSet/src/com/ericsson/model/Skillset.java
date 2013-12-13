@@ -32,11 +32,17 @@ public class Skillset
 		return getAsString(SKILLSETGROUP);
 	}
 	
+	/**
+	 * Create a SkillSet record.
+	 * @param line
+	 * @return
+	 * @throws ParseException
+	 */
 	public static Skillset newInstance(String line)
 		throws ParseException {
 		Skillset skillset = new Skillset();
 		//  The skillset file uses a comma (,) as a separator
-		skillset.parse(line, ",");
+		skillset.parse(line);
 		return skillset;
 	}
 

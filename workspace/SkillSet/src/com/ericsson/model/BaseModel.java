@@ -143,13 +143,13 @@ public abstract class BaseModel
 	}
 	
 	/**
-	 * Parse the input line to create the object.<p>Use the default separator.</p>
+	 * Parse the input line to create the object.<p>Use the default separator (,).</p>
 	 * @param line
 	 * @throws ParseException
 	 */
 	protected void parse(String line)
 		throws ParseException {
-		parse(line, "|");
+		parse(line, ",");
 	}
 	
 	/**

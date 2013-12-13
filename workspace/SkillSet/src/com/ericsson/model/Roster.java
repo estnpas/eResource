@@ -299,7 +299,8 @@ public class Roster
 	}
 	
 	/**
-	 * Create a new instance of the Roster record and parse out the specified line
+	 * Create a new instance of the Roster record and parse out the specified line.<p>The Roster records use the 
+	 * | as a separator character.</p>
 	 * @param line
 	 * @return
 	 * @throws ParseException
@@ -307,7 +308,7 @@ public class Roster
 	public static Roster newInstance(String line) 
 		throws ParseException {
 		Roster roster = new Roster();
-		roster.parse(line);
+		roster.parse(line, "|");
 		return roster;
 	}
 }

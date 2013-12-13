@@ -70,7 +70,8 @@ public abstract class BaseProcessor
 	}
 	
 	/**
-	 * Load in the information from the Telcocell Roster file
+	 * Load in the information from the Telcocell Roster file.<p>For the Telcocell Roster file we
+	 * use the | separator as the columns may contain commas.</p>
 	 * @param dir
 	 * @param fileName
 	 * @throws IOException
