@@ -28,6 +28,7 @@ import com.ericsson.model.TelcocellRoster;
 public class RosterProcessor 
 	extends BaseProcessor {
 	
+	private Set<String> positions = new TreeSet<String>();
 	private Set<String> roles = new TreeSet<String>();
 	
 	private void addTemplate(File dir, PrintWriter pw) {
@@ -54,18 +55,44 @@ public class RosterProcessor
 			if (!roles.contains(role)) {
 				roles.add(role);
 			}
+		}				
+	}
+	
+	private void checkAndAddPosition(String position) {
+		if (StringUtils.isNotBlank(position)) {
+			//  Ok, if not already present...add the ROLE
+			if (!positions.contains(position)) {
+				positions.add(position);
+			}
 		}		
 	}
 	
-	private void checkAndAddTelcocellRole() {
+	private void checkAndAddTelcocellPosition() {
 		for (TelcocellRoster roster : this.telcocellRoster) {
 			String positionName = roster.getPositionName();
-			checkAndAddRole(roster.getPositionName());
+			checkAndAddPosition(positionName);
 		}
 	}
 	
+	private void publishPositionInformation(File dir) {
+		File outFile = new File(dir, "Positions.csv");
+		if (outFile.exists()) {
+			outFile.delete();
+		}
+		
+		//  Publish
+		try {
+			PrintWriter pw = new PrintWriter(outFile);
+			for (String position : positions) {
+				pw.println(position); 
+			}
+			pw.flush();
+			pw.close();
+		} catch (IOException e1) {}
+	}
+	
 	private void publishRoleInformation(File dir) {
-		File outFile = new File(dir, "roles.csv");
+		File outFile = new File(dir, "RoleExceptions.csv");
 		if (outFile.exists()) {
 			outFile.delete();
 		}
@@ -93,6 +120,7 @@ public class RosterProcessor
 		throws IOException {
 		
 		Map<String,String> officeTranslations = null;
+		Map<String,String> roleTranslations = null;
 		
 		//  Load in the Translations:
 		//      Office
@@ -100,11 +128,19 @@ public class RosterProcessor
 		if (translationDir.exists() && translationDir.isDirectory()) {
 			String officeTranslationFilename = "office_translations.csv";
 			officeTranslations = loadTranslation(translationDir, officeTranslationFilename);
+			
+			String roleTranslationFilename = "role_translations.csv";
+			roleTranslations = loadTranslation(translationDir, roleTranslationFilename);
 		}
 		
 		File outFile = new File(dir, "eRS_Resource_Import.csv");
 		if (outFile.exists()) {
 			outFile.delete();
+		}
+		
+		File outRoleFile = new File(dir, "RoleList.csv");
+		if (outRoleFile.exists()) {
+			outRoleFile.delete();
 		}
 		
 		PrintWriter pw = new PrintWriter(outFile);
@@ -113,12 +149,16 @@ public class RosterProcessor
 		//  Add in the column/field headers
 		pw.println(EResource.getFieldHeaders(","));
 		
+		//  Open the Role List file
+		PrintWriter pwRole = new PrintWriter(outRoleFile);
+		pwRole.println("Personnel Number,Resource Name, Role");
+		
 		File rosterDir = new File(dir, "rosterData");
 		if (rosterDir.exists() && rosterDir.isDirectory()) {
 			
 			//  Load in the Telcocell Roster (from the HC data) data
 			loadTelcocellRosterHC(rosterDir, "Nov Telcocell HC 2013 v5 Clean.csv");
-			checkAndAddTelcocellRole();
+			checkAndAddTelcocellPosition();
 			
 			//  Load in the Telcocell Resource (skillset) data
 			try {
@@ -138,7 +178,9 @@ public class RosterProcessor
 				
 				try {
 					Roster roster = Roster.newInstance(line);
-					checkAndAddRole(roster.getPositionName());
+					checkAndAddPosition(roster.getPositionName());
+					
+					
 					
 					//  Lookup the Telcocell Roster record
 					TelcocellRoster telcocellRoster = findTelcocellRoster(roster.getPersonnelNumber());
@@ -193,6 +235,24 @@ public class RosterProcessor
 					}
 						
 					pw.println(eResource.toCSV(","));
+					
+					//  Publish the Role information
+					//  Translate the Role
+					String translatedRole = translate(
+												roleTranslations, 
+												roster.getRole());
+					System.out.println("Role " + roster.getRole() + " = " + translatedRole);
+					if (StringUtils.isEmpty(translatedRole)) {
+						checkAndAddRole(roster.getRole());
+					}
+					pwRole.println(
+									StringUtils.defaultString(roster.getPersonnelNumber())
+									+ ","
+									+ roster.getLastName()
+									+ " "
+									+ roster.getFirstName()
+									+ ","
+									+ StringUtils.defaultIfEmpty(translatedRole, "undefined"));
 				} catch (ParseException e1) {}
 				line = br.readLine();
 			}
@@ -203,8 +263,14 @@ public class RosterProcessor
 		pw.flush();
 		pw.close();
 		
-		//  Publish the completed role information
+		pwRole.flush();
+		pwRole.close();
+		
+		//  Publish the completed role information (overall list of Roles)
 		publishRoleInformation(dir);
+		
+		//  Publish the completed position information (overall list of Positions);
+		publishPositionInformation(dir);
 
 	}
 	

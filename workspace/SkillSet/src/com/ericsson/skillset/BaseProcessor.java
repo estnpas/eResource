@@ -30,14 +30,26 @@ public abstract class BaseProcessor
 	
 	protected String translate(
 						Map<String,String> translations, 
-						String key) {
+						String key,
+						String def) {
+		String returnValue = def;
 		if (StringUtils.isNotBlank(key)) {
-			if (translations.containsKey(key)) {
-				return translations.get(key);
+			String keyValue = StringUtils.lowerCase(key);
+			if (translations.containsKey(keyValue)) {
+				returnValue = translations.get(keyValue);
 			}
-			System.out.println("Could not find '" + key + "'");
 		}
-		return "";
+		
+		return returnValue;
+	}
+	
+	protected String translate(
+							Map<String,String> translations, 
+							String key) {
+		return translate(
+					translations, 
+					key,
+					"");
 	}
 	
 	protected Map<String,String> loadTranslation(
@@ -56,8 +68,14 @@ public abstract class BaseProcessor
 				try {
 					Translation translation = Translation.newInstance(line);
 					//  Check if we already exist.
-					if (!translations.containsKey(translation.getKey())) {
-						translations.put(translation.getKey(), translation.getValue());
+					//  For any translation, it always translate to itself
+					String keyValue = StringUtils.lowerCase(translation.getKey());
+					if (!translations.containsKey(keyValue)) {
+						translations.put(keyValue, translation.getValue());
+						keyValue = StringUtils.lowerCase(translation.getValue());
+						if (!translations.containsKey(keyValue)) {
+							translations.put(keyValue, translation.getValue());
+						}
 					}
 				} catch (ParseException e1) {}
 				line = br.readLine();
