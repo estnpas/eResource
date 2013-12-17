@@ -35,13 +35,8 @@ public class SkillsetProcessor
 	 * @throws IOException
 	 * @throws FileNotFoundException
 	 */
-	public void loadTranslation(String fileName) 
+	public void loadTranslation(File inFile) 
 		throws IOException, FileNotFoundException {
-		File inFile = new File(fileName);
-		
-		if (!inFile.exists()) {
-			throw new FileNotFoundException("File '" + fileName + "' was not found.");
-		}
 		
 		BufferedReader br = new BufferedReader(new FileReader(inFile));
 		String line = br.readLine();
@@ -86,7 +81,7 @@ public class SkillsetProcessor
 	 */
 	public void process(File dir) 
 		throws FileNotFoundException {
-		File outFile = new File(dir, "SkillListGlobal.csv");
+		File outFile = new File(dir, "SkillList.csv");
 		if (outFile.exists()) {
 			outFile.delete();
 		}
@@ -95,6 +90,8 @@ public class SkillsetProcessor
 		//  Ok, we have the resources...now build a list of the skills...
 		
 		for (Resource resource : resources) {
+			
+			System.out.println("Process " + resource.toXMLString());
 			
 			//  If the firstname or lastname are empty, bypass
 			if (StringUtils.isNotBlank(resource.getLastName()) &&
@@ -212,7 +209,8 @@ public class SkillsetProcessor
 		
 		//  Translation table can be empty
 		try {
-			processor.loadTranslation("C:/Users/estnpas/Desktop/eResource/skills_grouping.csv");
+			File tranFile = new File(dir, "translation/skills_grouping.csv");
+			processor.loadTranslation(tranFile);
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 		} catch (IOException e1) {			
@@ -221,7 +219,7 @@ public class SkillsetProcessor
 		
 		//  Load and process all of the files from the specified folder.
 		try {	
-			File dataDir = new File(dir, "data");
+			File dataDir = new File(dir, "skillsData");
 			if (!dataDir.exists() || !dataDir.isDirectory()) {
 				System.err.println("The directory '" + dataDir.getName() + "' is not found.");
 				System.exit(-1);

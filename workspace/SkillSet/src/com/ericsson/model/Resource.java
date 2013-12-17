@@ -148,7 +148,7 @@ public class Resource
 	public static Resource newInstance(String line) 
 		throws ParseException {
 		Resource rsrc = new Resource();
-		rsrc.parse(line);
+		rsrc.parse(line, "|");
 		
 		return rsrc;
 	}

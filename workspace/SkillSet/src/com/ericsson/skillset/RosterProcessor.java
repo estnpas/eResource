@@ -74,7 +74,7 @@ public class RosterProcessor
 		try {
 			PrintWriter pw = new PrintWriter(outFile);
 			for (String role : roles) {
-				pw.println(role);
+				pw.println(role); 
 			}
 			pw.flush();
 			pw.close();
