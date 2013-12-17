@@ -180,8 +180,6 @@ public class RosterProcessor
 					Roster roster = Roster.newInstance(line);
 					checkAndAddPosition(roster.getPositionName());
 					
-					
-					
 					//  Lookup the Telcocell Roster record
 					TelcocellRoster telcocellRoster = findTelcocellRoster(roster.getPersonnelNumber());
 					
@@ -232,8 +230,7 @@ public class RosterProcessor
 						} else {
 							eResource.setType(TYPE_CONTRACTOR);
 						}
-					}
-						
+					}						
 					pw.println(eResource.toCSV(","));
 					
 					//  Publish the Role information
@@ -241,7 +238,6 @@ public class RosterProcessor
 					String translatedRole = translate(
 												roleTranslations, 
 												roster.getRole());
-					System.out.println("Role " + roster.getRole() + " = " + translatedRole);
 					if (StringUtils.isEmpty(translatedRole)) {
 						checkAndAddRole(roster.getRole());
 					}
@@ -252,7 +248,7 @@ public class RosterProcessor
 									+ " "
 									+ roster.getFirstName()
 									+ ","
-									+ StringUtils.defaultIfEmpty(translatedRole, "undefined"));
+									+ translatedRole);
 				} catch (ParseException e1) {}
 				line = br.readLine();
 			}
