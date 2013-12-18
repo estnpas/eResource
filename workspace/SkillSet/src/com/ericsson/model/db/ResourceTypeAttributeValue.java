@@ -2,6 +2,11 @@ package com.ericsson.model.db;
 
 import java.util.Date;
 
+/**
+ * Define a model to encapsulate the Resource-Type Attribute Value DB model
+ * @author estnpas
+ *
+ */
 public class ResourceTypeAttributeValue 
 	extends BaseDBModel {
 	
@@ -79,6 +84,8 @@ private static final String TABLE_NAME = "ResourceTypeAttributeValue";
 		return buffer.toString();
 	}
 	
-
+	public String getTableName() {
+		return TABLE_NAME;
+	}
 
 }

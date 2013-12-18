@@ -22,4 +22,7 @@ public abstract class BaseDBModel
 	protected int convertToBit(boolean value) {
 		return (value) ? 1 : 0;
 	}
+	
+	public abstract String getTableName();
+	public abstract String generateInsertSQL();
 }
