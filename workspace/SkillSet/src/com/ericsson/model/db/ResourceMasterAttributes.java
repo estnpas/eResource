@@ -5,6 +5,11 @@ public class ResourceMasterAttributes
 	
 	public static final String TABLE_NAME = "ResourceMasterAttributes";
 	
+	public static final String COL_ID = "Id";
+	public static final String COL_RESOURCEID = "ResourceId";
+	public static final String COL_ATTRIBUTEID = "AttributeId";
+	public static final String COL_ATTRIBUTEVALUEID = "AttributeValueId";
+	
 	private int id;
 	private int resourceId;
 	private int attributeId;

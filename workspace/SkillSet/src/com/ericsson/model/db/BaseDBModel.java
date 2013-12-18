@@ -8,9 +8,6 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 public abstract class BaseDBModel 
 	implements Serializable {
 	
-	public static final String COL_ID = "Id";
-	public static final String COL_RESOURCEID = "ResourceId";
-	public static final String COL_ATTRIBUTEVALUEID = "AttributeValueId";
 	public static final String COL_ATTRIBUTEID = "AttributeId";
 	public static final String COL_ATTRIBUTEVALUE = "AttributeValue";
 	public static final String COL_LASTUPDATED = "Last_Updated";

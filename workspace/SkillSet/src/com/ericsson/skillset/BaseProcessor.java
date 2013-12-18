@@ -68,13 +68,16 @@ public abstract class BaseProcessor
 				try {
 					Translation translation = Translation.newInstance(line);
 					//  Check if we already exist.
-					//  For any translation, it always translate to itself
+					//  For any translation, it always translates to itself
 					String keyValue = StringUtils.lowerCase(translation.getKey());
 					if (!translations.containsKey(keyValue)) {
-						translations.put(keyValue, translation.getValue());
-						keyValue = StringUtils.lowerCase(translation.getValue());
-						if (!translations.containsKey(keyValue)) {
-							translations.put(keyValue, translation.getValue());
+						String value = StringUtils.trimToEmpty(translation.getValue());
+						if (StringUtils.isNotEmpty(value)) {
+							translations.put(keyValue, value);
+							keyValue = StringUtils.lowerCase(value);
+							if (!translations.containsKey(keyValue)) {
+								translations.put(keyValue, value);
+							}
 						}
 					}
 				} catch (ParseException e1) {}

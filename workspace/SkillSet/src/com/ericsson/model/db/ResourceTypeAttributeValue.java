@@ -10,7 +10,11 @@ import java.util.Date;
 public class ResourceTypeAttributeValue 
 	extends BaseDBModel {
 	
-private static final String TABLE_NAME = "ResourceTypeAttributeValue";
+	public static final String TABLE_NAME = "ResourceTypeAttributeValue";
+	
+	public static final String COL_ATTRIBUTEVALUEID = "AttributeValueId";
+	public static final String COL_ATTRIBUTEID = "AttributeId";
+	public static final String COL_ATTRIBUTEVALUE = "AttributeValue";
 	
 	private int attributeValueId;
 	private int attributeId;
