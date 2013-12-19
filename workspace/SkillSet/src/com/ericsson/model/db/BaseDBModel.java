@@ -5,6 +5,11 @@ import java.util.Date;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 
+/**
+ * Base layout for any DB table definition
+ * @author estnpas
+ *
+ */
 public abstract class BaseDBModel 
 	implements Serializable {
 	

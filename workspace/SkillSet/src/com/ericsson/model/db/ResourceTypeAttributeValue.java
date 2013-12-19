@@ -1,6 +1,5 @@
 package com.ericsson.model.db;
 
-import java.util.Date;
 
 /**
  * Define a model to encapsulate the Resource-Type Attribute Value DB model

@@ -1,5 +1,10 @@
 package com.ericsson.model.db;
 
+/**
+ * Define the ResourceMasterAttributes DB table
+ * @author estnpas
+ *
+ */
 public class ResourceMasterAttributes 
 	extends BaseDBModel {
 	
