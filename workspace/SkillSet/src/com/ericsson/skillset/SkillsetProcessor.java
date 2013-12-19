@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,7 @@ import java.util.TreeSet;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrTokenizer;
+import org.apache.commons.lang3.time.DateFormatUtils;
 
 import com.ericsson.model.Resource;
 import com.ericsson.model.Skillset;
@@ -185,6 +187,10 @@ public class SkillsetProcessor
 			sqlFile.delete();
 		}
 		PrintWriter pwSQL = new PrintWriter(sqlFile);
+		pwSQL.println();
+		pwSQL.println("--  Resource Assignment");
+		pwSQL.println("--  Date: " + DateFormatUtils.format(new Date(), "MMM-dd-yyyy HH:mm"));
+		pwSQL.println();
 		
 		//  Load in the Skill Translations
 		try {
