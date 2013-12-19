@@ -32,53 +32,8 @@ public class SkillsetProcessor
 	extends BaseProcessor {
 	
 	private List<Resource> resources = new ArrayList<Resource>();
-	private List<Skillset> skillsets = new ArrayList<Skillset>();
 	private Set<String> skills = new TreeSet<String>();
-	
-	/**
-	 * Load the records from the Skills Translation table
-	 * @param fileName
-	 * @throws IOException
-	 * @throws FileNotFoundException
-	 */
-	public void loadSkillTranslation(File inFile) 
-		throws IOException, FileNotFoundException {
-		
-		BufferedReader br = new BufferedReader(new FileReader(inFile));
-		String line = br.readLine();
-		line = br.readLine();
-		while (line!=null) {			
-			try {
-				skillsets.add(Skillset.newInstance(line));
-			} catch (ParseException e1) {}
-			
-			line = br.readLine();
-		}
-		
-		br.close();
-		
-		//  Ok, list out the translations to make sure we processed properly.
-		for (Skillset skillset : skillsets) {
-			System.out.println("Skill " + skillset.getName() + "=" + skillset.getSkillsetKey());
-		}
-	}
-	
-	private Skillset findSkill(String key) {
-		for (Skillset skillset : skillsets) {
-			if (StringUtils.equalsIgnoreCase(skillset.getName(), key)) {
-				return skillset;
-			}
-		}
-		return null;
-	}
-	
-	private String translateSkill(String key) {
-		Skillset skillset = findSkill(StringUtils.lowerCase(key));
-		if (skillset!=null) {
-			return skillset.getSkillsetKey();
-		}
-		return null;
-	}	
+	private Set<String> skillExceptions = new TreeSet<String>();
 	
 	private void generateSkillsAssignment(
 									PrintWriter pwSQL,
@@ -147,6 +102,67 @@ public class SkillsetProcessor
 		}
 	}
 	
+	private void addSkill(String skill) {
+		String skillKey = StringUtils.lowerCase(StringUtils.trimToEmpty(skill));
+		if (StringUtils.isNotEmpty(skillKey) &&
+				!skills.contains(skillKey)) {
+			skills.add(skillKey);
+		}
+	}
+	
+	private void publishSkills(File dir) {
+		try {
+			File skillFile = new File(dir, "Skills.csv");
+			if (skillFile.exists()) {
+				skillFile.delete();
+			}
+			System.out.println("There are " + skills.size() + " skills.");
+			if (!skills.isEmpty()) {
+				PrintWriter pwSkill = new PrintWriter(skillFile);
+				pwSkill.println("Skill");
+				for (String skill : skills) {
+					pwSkill.println(skill);
+				}
+				pwSkill.flush();
+				pwSkill.close();
+			}
+		} catch (IOException e1) {}
+	}
+	
+	private void addSkillException(String skill) {
+		String skillKey = StringUtils.lowerCase(StringUtils.trimToEmpty(skill));
+		if (StringUtils.isNotEmpty(skillKey) &&
+				!skillExceptions.contains(skillKey)) {
+			skillExceptions.add(skillKey);
+		}
+	}
+	
+	private void publishSkillExceptions(File dir) {
+		try {
+			File skillExceptionFile = new File(dir, "SkillExceptions.csv");
+			if (skillExceptionFile.exists()) {
+				skillExceptionFile.delete();
+			}
+			System.out.println("There are " + skillExceptions.size() + " exceptions.");
+			if (!skillExceptions.isEmpty()) {
+				PrintWriter pwSkillException = new PrintWriter(skillExceptionFile);
+				pwSkillException.println("Skill");
+				for (String skillException : skillExceptions) {
+					pwSkillException.println(skillException);
+				}
+				pwSkillException.flush();
+				pwSkillException.close();
+			}
+		} catch (IOException e1) {}
+	}
+	
+	private void addToInventory(StringBuffer skillInventory, String skillKey) {
+		if (skillInventory.length()>0) {
+			skillInventory.append(",");
+		}
+		skillInventory.append(skillKey);
+	}
+	
 	/**
 	 * Process the loaded Skills Inventory records
 	 * @param dir
@@ -156,13 +172,13 @@ public class SkillsetProcessor
 		throws FileNotFoundException {
 		
 		Map<String,String> skillTranslations = null;
-		Set<String> skillExceptions = new TreeSet<String>();
 		
 		File outFile = new File(dir, "SkillList.csv");
 		if (outFile.exists()) {
 			outFile.delete();
 		}
 		PrintWriter pw = new PrintWriter(outFile);
+		pw.println("Resource-Name, Skill");
 		
 		File sqlFile = new File (dir, "ResourceAssignment.sql");
 		if (sqlFile.exists()) {
@@ -196,18 +212,9 @@ public class SkillsetProcessor
 					String skillLookupKey = StringUtils.lowerCase(StringUtils.trimToEmpty(skill));
 					if (StringUtils.isNotEmpty(skillLookupKey)) {
 						String skillKey = (String)translate(skillTranslations, skillLookupKey);
-						
-						if (StringUtils.isNotBlank(skillKey)) {
-							if(skillInventory.length()>0) {
-								skillInventory.append(",");
-							}
-							skillInventory.append(skillKey);
-							
-							//  Translate
-							Skillset skillset = findSkill(skillKey);
-							if (skillset!=null) {
-								skills.add(skillKey);
-							}
+						if (StringUtils.isNotEmpty(skillKey)) {
+							addToInventory(skillInventory, skillKey);
+							addSkill(skillKey);
 						} else {
 							//  Sometimes there is a combination of fields....so check each word to see if it maps
 							boolean foundValue = false;
@@ -216,62 +223,49 @@ public class SkillsetProcessor
 								//  Ok, for each token
 								String tokenKey = StringUtils.lowerCase(StringUtils.trimToEmpty(token));
 								if (StringUtils.isNotEmpty(tokenKey)) {
-									System.out.print("Checking " + tokenKey);
 									String tokenKeyValue = (String)translate(skillTranslations, token);
 									
 									if (StringUtils.isNotEmpty(tokenKeyValue)) {
-										System.out.println(" found");
 										foundValue = true;
-										if(skillInventory.length()>0) {
-											skillInventory.append(",");
-										}
-										skillInventory.append(skillKey);
-									} else {
-										System.out.println(" NOT found");
+										addToInventory(skillInventory, tokenKeyValue);
+										addSkill(tokenKeyValue);
 									}
 								}
 							}
+							
+							//  if we have no resolution from attempting to parse the skill
+							//  add to the list of exceptions. 
+							//  NB:  The original key is added, not any of the parsed entities
 							if (!foundValue) {
-								if (!skillExceptions.contains(skillLookupKey)) {
-									skillExceptions.add(skillLookupKey);
-								}
+								addSkillException(skillLookupKey);
 							}
 						}
 					}
-					
-					//  Reset the skillList on the resource
-					resource.setSkillList(skillInventory.toString());
-					
-					//  Generate the SQL
-					generateSkillsAssignment(pwSQL, resource);
-					
-					//  Publish a skills extract record....
-					String resourceName = resource.getFirstName()
-							+ " "
-							+ resource.getLastName();
-					pw.println(resourceName
-									+ ","
-									+ "\""
-									+ resource.getSkillList()
-									+ "\"");
 				}	
+				
+				//  Reset the skillList on the resource
+				resource.setSkillList(skillInventory.toString());
+				
+				//  Generate the SQL
+				generateSkillsAssignment(pwSQL, resource);
+				
+				//  Publish a skills extract record....
+				String resourceName = resource.getFirstName()
+						+ " "
+						+ resource.getLastName();
+				pw.println(resourceName
+								+ ","
+								+ "\""
+								+ resource.getSkillList()
+								+ "\"");
 			}			
 		}
 		
+		//  Publish the list of all of the skills used
+		publishSkills(dir);
+		
 		//  Publish the missing Skills list
-		File skillExceptionFile = new File(dir, "SkillExceptions.csv");
-		if (skillExceptionFile.exists()) {
-			skillExceptionFile.delete();
-		}
-		System.out.println("There are " + skillExceptions.size() + " exceptions.");
-		if (!skillExceptions.isEmpty()) {
-			PrintWriter skillExceptionPw = new PrintWriter(skillExceptionFile);
-			for (String skillException : skillExceptions) {
-				skillExceptionPw.println(skillException);
-			}
-			skillExceptionPw.flush();
-			skillExceptionPw.close();
-		}
+		publishSkillExceptions(dir);
 		
 		pwSQL.flush();
 		pwSQL.close();
