@@ -10,14 +10,16 @@ import java.text.ParseException;
 public class Skillset 
 	extends BaseModel {
 	
-	private static final String NAME = "SpreadsheetName";
-	private static final String SKILLSETKEY = "SkillsetKey";
-	private static final String SKILLSETGROUP = "SkillsetGroup";
+	private static final String NAME = "skillEntered";
+	private static final String SKILLSETKEY = "skilltranslation";
+	private static final String SKILLSETGROUP = "skillGroup"; // not used, just a place holder
+	private static final String SKILLSETTYPE = "skillType"; // functional vs technical
 	
 	public Skillset() {
 		register(NAME);
 		register(SKILLSETKEY);
 		register(SKILLSETGROUP);
+		register(SKILLSETTYPE);
 	}
 	
 	public String getName() {
@@ -30,6 +32,10 @@ public class Skillset
 	
 	public String getSkillsetGroup() {
 		return getAsString(SKILLSETGROUP);
+	}
+	
+	public String getSkillsetType() {
+		return getAsString(SKILLSETTYPE);
 	}
 	
 	/**
