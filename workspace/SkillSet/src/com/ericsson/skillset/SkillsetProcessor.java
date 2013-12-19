@@ -165,6 +165,10 @@ public class SkillsetProcessor
 		skillInventory.append(skillKey);
 	}
 	
+	private String createKey(String source) {
+		return StringUtils.lowerCase(StringUtils.trimToEmpty(source));
+	}
+	
 	/**
 	 * Process the loaded Skills Inventory records
 	 * @param dir
@@ -175,7 +179,7 @@ public class SkillsetProcessor
 		
 		Map<String,String> skillTranslations = null;
 		
-		File outFile = new File(dir, "SkillList.csv");
+		File outFile = new File(dir, "SkillResource.csv");
 		if (outFile.exists()) {
 			outFile.delete();
 		}
@@ -215,7 +219,7 @@ public class SkillsetProcessor
 					
 					//  For each skill, create a key value which is trimmed and set to lower-case
 					//  If found, then we attempt to translate this key.
-					String skillLookupKey = StringUtils.lowerCase(StringUtils.trimToEmpty(skill));
+					String skillLookupKey = createKey(skill);
 					if (StringUtils.isNotEmpty(skillLookupKey)) {
 						String skillKey = (String)translate(skillTranslations, skillLookupKey);
 						if (StringUtils.isNotEmpty(skillKey)) {
@@ -227,7 +231,7 @@ public class SkillsetProcessor
 							StrTokenizer skillTokenizer = new StrTokenizer(skillLookupKey, " ");
 							for (String token : skillTokenizer.getTokenList()) {
 								//  Ok, for each token
-								String tokenKey = StringUtils.lowerCase(StringUtils.trimToEmpty(token));
+								String tokenKey = createKey(token);
 								if (StringUtils.isNotEmpty(tokenKey)) {
 									String tokenKeyValue = (String)translate(skillTranslations, token);
 									
@@ -256,10 +260,7 @@ public class SkillsetProcessor
 				generateSkillsAssignment(pwSQL, resource);
 				
 				//  Publish a skills extract record....
-				String resourceName = resource.getFirstName()
-						+ " "
-						+ resource.getLastName();
-				pw.println(resourceName
+				pw.println(resource.getFullName()
 								+ ","
 								+ "\""
 								+ resource.getSkillList()
