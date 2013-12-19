@@ -15,6 +15,7 @@ import java.util.TreeSet;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.text.StrTokenizer;
 
 import com.ericsson.model.Resource;
 import com.ericsson.model.Skillset;
@@ -155,6 +156,7 @@ public class SkillsetProcessor
 		throws FileNotFoundException {
 		
 		Map<String,String> skillTranslations = null;
+		Set<String> skillExceptions = new TreeSet<String>();
 		
 		File outFile = new File(dir, "SkillList.csv");
 		if (outFile.exists()) {
@@ -174,19 +176,26 @@ public class SkillsetProcessor
 		} catch (IOException e11) {}
 		
 		//  Ok, we have the resources...now build a list of the skills...
+		//  We do this in multiple passes.  If the full value of the skill is not found in the translation table which lists all of 
+		//  the valid skills, then we attempt to break it down into component skills.
+		//  For each of these we attempt to determine if its a valid skill as well.
 		
 		for (Resource resource : resources) {
 			
-			System.out.println("Process " + resource.toXMLString());
-			String[] normalizedSkills = new String[0];
-			
 			//  If the firstname or lastname are empty, bypass
+			//  If the list of skills has values
 			if (StringUtils.isNotBlank(resource.getLastName()) &&
-					StringUtils.isNotBlank(resource.getFirstName())) {
-				if (resource.getSkills().length>0) {
-					StringBuffer skillInventory = new StringBuffer();
-					for (String skill : resource.getSkills()) {
-						String skillKey = (String)translate(skillTranslations, skill);
+					StringUtils.isNotBlank(resource.getFirstName()) &&
+					resource.getSkills().length>0) {
+				
+				StringBuffer skillInventory = new StringBuffer();
+				for (String skill : resource.getSkills()) {
+					
+					//  For each skill, create a key value which is trimmed and set to lower-case
+					//  If found, then we attempt to translate this key.
+					String skillLookupKey = StringUtils.lowerCase(StringUtils.trimToEmpty(skill));
+					if (StringUtils.isNotEmpty(skillLookupKey)) {
+						String skillKey = (String)translate(skillTranslations, skillLookupKey);
 						
 						if (StringUtils.isNotBlank(skillKey)) {
 							if(skillInventory.length()>0) {
@@ -194,13 +203,38 @@ public class SkillsetProcessor
 							}
 							skillInventory.append(skillKey);
 							
-							//  Add to the list of normalized skills for this resource
-							normalizedSkills = ArrayUtils.add(normalizedSkills,  skillKey);
-							
 							//  Translate
 							Skillset skillset = findSkill(skillKey);
 							if (skillset!=null) {
 								skills.add(skillKey);
+							}
+						} else {
+							//  Sometimes there is a combination of fields....so check each word to see if it maps
+							boolean foundValue = false;
+							StrTokenizer skillTokenizer = new StrTokenizer(skillLookupKey, " ");
+							for (String token : skillTokenizer.getTokenList()) {
+								//  Ok, for each token
+								String tokenKey = StringUtils.lowerCase(StringUtils.trimToEmpty(token));
+								if (StringUtils.isNotEmpty(tokenKey)) {
+									System.out.print("Checking " + tokenKey);
+									String tokenKeyValue = (String)translate(skillTranslations, token);
+									
+									if (StringUtils.isNotEmpty(tokenKeyValue)) {
+										System.out.println(" found");
+										foundValue = true;
+										if(skillInventory.length()>0) {
+											skillInventory.append(",");
+										}
+										skillInventory.append(skillKey);
+									} else {
+										System.out.println(" NOT found");
+									}
+								}
+							}
+							if (!foundValue) {
+								if (!skillExceptions.contains(skillLookupKey)) {
+									skillExceptions.add(skillLookupKey);
+								}
 							}
 						}
 					}
@@ -222,6 +256,21 @@ public class SkillsetProcessor
 									+ "\"");
 				}	
 			}			
+		}
+		
+		//  Publish the missing Skills list
+		File skillExceptionFile = new File(dir, "SkillExceptions.csv");
+		if (skillExceptionFile.exists()) {
+			skillExceptionFile.delete();
+		}
+		System.out.println("There are " + skillExceptions.size() + " exceptions.");
+		if (!skillExceptions.isEmpty()) {
+			PrintWriter skillExceptionPw = new PrintWriter(skillExceptionFile);
+			for (String skillException : skillExceptions) {
+				skillExceptionPw.println(skillException);
+			}
+			skillExceptionPw.flush();
+			skillExceptionPw.close();
 		}
 		
 		pwSQL.flush();
@@ -248,6 +297,8 @@ public class SkillsetProcessor
 			try {
 				Resource rsrc = Resource.newInstance(line);
 				resources.add(rsrc);
+				
+//				System.out.println("Resource " + rsrc.getLastName());
 			} catch (ParseException e1) {
 				e1.printStackTrace();
 			}
@@ -294,16 +345,6 @@ public class SkillsetProcessor
 			System.exit(-1);
 		}
 		
-		//  Translation table can be empty
-//		try {
-//			File tranFile = new File(dir, "translation/skills_grouping.csv");
-//			processor.loadSkillTranslation(tranFile);
-//		} catch (FileNotFoundException e1) {
-//			e1.printStackTrace();
-//		} catch (IOException e1) {			
-//			e1.printStackTrace();
-//		}
-		
 		//  Load and process all of the files from the specified folder.
 		try {	
 			File dataDir = new File(dir, "skillsData");
@@ -314,6 +355,7 @@ public class SkillsetProcessor
 			
 			processor.loadDirectory(dataDir);
 			processor.process(dir);
+			
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		} catch (Exception e1) {
